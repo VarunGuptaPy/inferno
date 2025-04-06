@@ -56,10 +56,10 @@
 
 | Installation Type | Command |
 |:----------------:|:-------:|
-| **Basic Installation** | `pip install inferno` |
-| **With TPU Support** | `pip install "inferno[tpu]"` |
-| **With GGUF Support** | `pip install "inferno[gguf]"` |
-| **Full Installation** | `pip install "inferno[tpu,gguf]"` |
+| **Basic Installation** | `pip install HelpingAI-inferno` |
+| **With TPU Support** | `pip install "HelpingAI-inferno[tpu]"` |
+| **With GGUF Support** | `pip install "HelpingAI-inferno[gguf]"` |
+| **Full Installation** | `pip install "HelpingAI-inferno[tpu,gguf]"` |
 
 </div>
 
