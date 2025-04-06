@@ -171,7 +171,7 @@ The server now uses the native role (message) feature of transformers and llama-
 pip install inferno
 
 # Run any model with one command
-inferno --model mistralai/Mistral-7B-Instruct-v0.2
+inferno server --model mistralai/Mistral-7B-Instruct-v0.2
 ```
 
 </div>
@@ -182,22 +182,34 @@ inferno --model mistralai/Mistral-7B-Instruct-v0.2
 
 ```bash
 # Run any model from Hugging Face
-inferno --model meta-llama/Llama-2-7b-chat-hf
+inferno server --model meta-llama/Llama-2-7b-chat-hf
 
 # Run any open source model
-inferno --model mistralai/Mistral-7B-Instruct-v0.2
+inferno server --model mistralai/Mistral-7B-Instruct-v0.2
 
 # Run Gemma models
-inferno --model google/gemma-7b-it
+inferno server --model google/gemma-7b-it
 
 # Run Phi models
-inferno --model microsoft/phi-2
+inferno server --model microsoft/phi-2
 
 # Run Qwen models
-inferno --model Qwen/Qwen1.5-7B-Chat
+inferno server --model Qwen/Qwen1.5-7B-Chat
 
 # Run any local model
-inferno --model /path/to/your/local/model
+inferno server --model /path/to/your/local/model
+
+# Download a model from Hugging Face
+inferno model download mistralai/Mistral-7B-Instruct-v0.2
+
+# Get information about a model
+inferno model info mistralai/Mistral-7B-Instruct-v0.2
+
+# Check system information
+inferno info
+
+# Check installed dependencies
+inferno util check-dependencies
 ```
 
 ### Python API
@@ -242,67 +254,70 @@ inferno.run_server(config)
 ```bash
 # Load multiple models of any type at startup (works on any device: CPU, GPU, TPU, Apple Silicon)
 # The system automatically detects available memory and allocates it optimally
-inferno --model meta-llama/Llama-2-7b-chat-hf --additional-models mistralai/Mistral-7B-Instruct-v0.2 google/gemma-7b-it microsoft/phi-2
+inferno server --model meta-llama/Llama-2-7b-chat-hf --additional-models "mistralai/Mistral-7B-Instruct-v0.2,google/gemma-7b-it,microsoft/phi-2"
 
 # Mix and match any models from different architectures
-inferno --model Qwen/Qwen1.5-7B-Chat --additional-models google/gemma-7b-it microsoft/phi-2 mistralai/Mixtral-8x7B-Instruct-v0.1
+inferno server --model Qwen/Qwen1.5-7B-Chat --additional-models "google/gemma-7b-it,microsoft/phi-2,mistralai/Mixtral-8x7B-Instruct-v0.1"
 
 # Running multiple models on GPU with automatic memory management
 # Memory is automatically detected and allocated with a 10% buffer (min 2GB)
-inferno --model meta-llama/Llama-2-7b-chat-hf --additional-models mistralai/Mistral-7B-Instruct-v0.2 google/gemma-7b-it --device cuda
+inferno server --model meta-llama/Llama-2-7b-chat-hf --additional-models "mistralai/Mistral-7B-Instruct-v0.2,google/gemma-7b-it" --device cuda
 
 # Running multiple models on CPU with automatic memory management
 # Memory is automatically detected and allocated with a 20% buffer (min 4GB)
-inferno --model mistralai/Mistral-7B-Instruct-v0.2 --additional-models microsoft/phi-2 Qwen/Qwen1.5-7B-Chat --device cpu
+inferno server --model mistralai/Mistral-7B-Instruct-v0.2 --additional-models "microsoft/phi-2,Qwen/Qwen1.5-7B-Chat" --device cpu
 
 # Running multiple models on Apple Silicon with automatic memory management
 # Memory is automatically detected and allocated with a 15% buffer (min 2GB)
-inferno --model google/gemma-7b-it --additional-models microsoft/phi-2 Qwen/Qwen1.5-7B-Chat --device mps
+inferno server --model google/gemma-7b-it --additional-models "microsoft/phi-2,Qwen/Qwen1.5-7B-Chat" --device mps
 
 # Running multiple models on TPU with automatic memory management
 # Memory is automatically detected and allocated with a 15% buffer (min 8GB)
-inferno --model meta-llama/Llama-2-7b-chat-hf --additional-models mistralai/Mistral-7B-Instruct-v0.2 google/gemma-7b-it --use-tpu
+inferno server --model meta-llama/Llama-2-7b-chat-hf --additional-models "mistralai/Mistral-7B-Instruct-v0.2,google/gemma-7b-it" --use-tpu
 ```
 
 ### Specific Hardware Usage
 
 ```bash
 # Force CPU usage with any model
-inferno --model mistralai/Mistral-7B-Instruct-v0.2 --device cpu
+inferno server --model mistralai/Mistral-7B-Instruct-v0.2 --device cpu
 
 # Force GPU usage with any model
-inferno --model meta-llama/Llama-2-7b-chat-hf --device cuda
+inferno server --model meta-llama/Llama-2-7b-chat-hf --device cuda
 
 # Force TPU usage with any model
-inferno --model google/gemma-7b-it --device xla --use-tpu --tpu-cores 8
+inferno server --model google/gemma-7b-it --device xla --use-tpu --tpu-cores 8
 
 # Force Apple Silicon (MPS) usage with any model
-inferno --model microsoft/phi-2 --device mps
+inferno server --model microsoft/phi-2 --device mps
 
 # Run smaller models on less powerful hardware
-inferno --model TinyLlama/TinyLlama-1.1B-Chat-v1.0 --device cpu
+inferno server --model TinyLlama/TinyLlama-1.1B-Chat-v1.0 --device cpu
 ```
 
 ### Using GGUF Models
 
 ```bash
 # Using a local GGUF file of any model
-inferno --enable-gguf --gguf-path path/to/any-model-q4_k_m.gguf
+inferno server --enable-gguf --gguf-path path/to/any-model-q4_k_m.gguf
 
 # Auto-downloading GGUF from Hugging Face for any model
-inferno --model TheBloke/Llama-2-7B-Chat-GGUF --enable-gguf --download-gguf
+inferno server --model TheBloke/Llama-2-7B-Chat-GGUF --enable-gguf --download-gguf
 
 # Specifying a particular GGUF file to download
-inferno --model TheBloke/Mistral-7B-Instruct-v0.2-GGUF --enable-gguf --download-gguf --gguf-filename mistral-7b-instruct-v0.2.Q4_K_M.gguf
+inferno server --model TheBloke/Mistral-7B-Instruct-v0.2-GGUF --enable-gguf --download-gguf --gguf-filename mistral-7b-instruct-v0.2.Q4_K_M.gguf
 
 # Run Mixtral models in GGUF format
-inferno --model TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF --enable-gguf --download-gguf --gguf-filename mixtral-8x7b-instruct-v0.1.Q4_K_M.gguf
+inferno server --model TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF --enable-gguf --download-gguf --gguf-filename mixtral-8x7b-instruct-v0.1.Q4_K_M.gguf
 
 # Run smaller GGUF models on less powerful hardware
-inferno --enable-gguf --download-gguf --model TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF --gguf-filename tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf --device cpu
+inferno server --enable-gguf --download-gguf --model TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF --gguf-filename tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf --device cpu
 
 # Run Qwen models in GGUF format
-inferno --enable-gguf --download-gguf --model TheBloke/Qwen1.5-7B-Chat-GGUF --gguf-filename qwen1.5-7b-chat.Q4_K_M.gguf
+inferno server --enable-gguf --download-gguf --model TheBloke/Qwen1.5-7B-Chat-GGUF --gguf-filename qwen1.5-7b-chat.Q4_K_M.gguf
+
+# Download a GGUF model directly
+inferno model download TheBloke/Mistral-7B-Instruct-v0.2-GGUF
 ```
 
 #### GGUF Model Features
@@ -353,26 +368,61 @@ GGUF models can run on multiple hardware platforms:
 
 ```bash
 # 8-bit quantization works with any model
-inferno --model meta-llama/Llama-2-7b-chat-hf --load-8bit
+inferno server --model meta-llama/Llama-2-7b-chat-hf --load-8bit
 
 # 4-bit quantization works with any model
-inferno --model mistralai/Mistral-7B-Instruct-v0.2 --load-4bit
+inferno server --model mistralai/Mistral-7B-Instruct-v0.2 --load-4bit
 
 # Run large models on consumer hardware with quantization
-inferno --model meta-llama/Llama-2-70b-chat-hf --load-4bit
+inferno server --model meta-llama/Llama-2-70b-chat-hf --load-4bit
 
 # Run Mixtral models with quantization
-inferno --model mistralai/Mixtral-8x7B-Instruct-v0.1 --load-4bit
+inferno server --model mistralai/Mixtral-8x7B-Instruct-v0.1 --load-4bit
 ```
 
 ### Adding API Key Security
 
 ```bash
 # Secure your API with keys - works with any model
-inferno --model meta-llama/Llama-2-7b-chat-hf --api-keys "key1,key2,key3"
+inferno server --model meta-llama/Llama-2-7b-chat-hf --api-keys "key1,key2,key3"
 
 # Secure multiple models with the same keys
-inferno --model mistralai/Mistral-7B-Instruct-v0.2 --additional-models google/gemma-7b-it --api-keys "key1,key2,key3"
+inferno server --model mistralai/Mistral-7B-Instruct-v0.2 --additional-models "google/gemma-7b-it" --api-keys "key1,key2,key3"
+```
+
+## 🛠️ CLI Features
+
+Inferno provides a modern, feature-rich command-line interface with the following features:
+
+- **Command Groups**: Organize commands into logical groups
+- **Subcommands**: Hierarchical command structure for better organization
+- **Rich Output**: Colorful console output with tables and progress bars
+- **Detailed Help**: Comprehensive help messages for all commands
+- **Model Management**: Download and inspect models directly from the CLI
+- **System Information**: View detailed system and hardware information
+- **Dependency Checking**: Verify that all required dependencies are installed
+- **Benchmarking**: Test server performance with customizable benchmarks
+
+### Example Commands
+
+```bash
+# Get help on available commands
+inferno --help
+
+# Get help on a specific command group
+inferno model --help
+
+# Get help on a specific command
+inferno model download --help
+
+# Check system information
+inferno info
+
+# Check installed dependencies
+inferno util check-dependencies
+
+# Run a benchmark
+inferno util benchmark --model mistralai/Mistral-7B-Instruct-v0.2 --num-requests 10 --concurrent 2
 ```
 
 ## 🔗 API Endpoints
@@ -476,17 +526,48 @@ inferno/
     └── device.py               # Device detection utilities
 ```
 
-### Command Line Options
+### Command Line Interface
+
+Inferno provides a modern, feature-rich command-line interface with commands and subcommands:
+
+```bash
+# Get help on available commands
+inferno --help
+
+# Start the server with default options
+inferno server
+
+# Start the server with custom options
+inferno server --model mistralai/Mistral-7B-Instruct-v0.2 --port 8080
+
+# Show the Inferno version
+inferno version
+
+# Show system information
+inferno info
+
+# Model management commands
+inferno model --help
+inferno model download mistralai/Mistral-7B-Instruct-v0.2
+inferno model info mistralai/Mistral-7B-Instruct-v0.2
+
+# Utility commands
+inferno util --help
+inferno util check-dependencies
+inferno util benchmark --model mistralai/Mistral-7B-Instruct-v0.2 --num-requests 10
+```
+
+### Server Command Options
 
 ```
---model              Path to HuggingFace model or local model directory
---additional-models  Additional models to load (space-separated list of model paths)
+--model, -m          Path to HuggingFace model or local model directory
+--additional-models  Additional models to load (comma-separated list of model paths)
 --model-revision     Specific model revision to load
 --tokenizer          Path to tokenizer (defaults to model path)
 --tokenizer-revision Specific tokenizer revision to load
 --host               Host to bind the server to (default: 0.0.0.0)
---port               Port to bind the server to (default: 8000)
---device             Device to load the model on (auto, cuda, cpu, mps, xla)
+--port, -p           Port to bind the server to (default: 8000)
+--device, -d         Device to load the model on (auto, cuda, cpu, mps, xla)
 --device-map         Device map for model distribution (default: auto)
 --dtype              Data type for model weights (float16, float32, bfloat16)
 --load-8bit          Load model in 8-bit precision

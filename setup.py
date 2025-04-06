@@ -22,6 +22,7 @@ setup(
         "bitsandbytes>=0.40.0",
         "psutil>=5.9.0",
         "huggingface_hub>=0.16.0",
+        "rich>=10.0.0",
     ],
     extras_require={
         "tpu": ["torch_xla"],
