@@ -1,3 +1,7 @@
+<div align="center">
+
+<img src="images/inferno.png" alt="Inferno Logo" width="300"/>
+
 # Inferno
 
 <p align="center">
@@ -6,60 +10,58 @@
   <img src="https://img.shields.io/badge/Version-0.1.0-orange" alt="Version: 0.1.0">
 </p>
 
-A professional, production-ready inference server that can run **any AI model** with universal compatibility and support for all major hardware platforms (CPU, GPU, TPU, Apple Silicon). Inferno provides a seamless experience for deploying and serving any language model from Hugging Face, local files, or GGUF format with automatic memory management and hardware optimization. Developed by HelpingAI, Inferno makes advanced AI deployment accessible to everyone.
+<p align="center"><strong>🔥 Run ANY AI model on ANY hardware with ONE server 🔥</strong></p>
 
-## Table of Contents
+</div>
 
-- [Installation](#installation)
-- [Features](#features)
-  - [Universal Model Compatibility](#universal-model-compatibility)
-  - [Multi-Model Support](#multi-model-support)
-  - [Multi-Hardware Support](#multi-hardware-support)
-- [Usage](#usage)
+<div align="center">
+
+> 🚀 A professional, production-ready inference server that can run **any AI model** with universal compatibility and support for all major hardware platforms (CPU, GPU, TPU, Apple Silicon).
+
+</div>
+
+**Inferno** provides a seamless experience for deploying and serving any language model from Hugging Face, local files, or GGUF format with automatic memory management and hardware optimization. Developed by HelpingAI, Inferno makes advanced AI deployment accessible to everyone.
+
+## 📖 Table of Contents
+
+- [📍 Installation](#-installation)
+- [🔥 Recent Updates](#-recent-updates)
+  - [🌐 Universal Model Compatibility](#-universal-model-compatibility)
+  - [💾 Multi-Model Support](#-multi-model-support-with-automatic-memory-management)
+  - [💬 Native Message Format Support](#-native-message-format-support)
+- [✨ Features](#-features)
+- [🔹 Usage](#-usage)
   - [Command Line](#command-line)
   - [Python API](#python-api)
   - [Multiple Models](#running-multiple-models)
   - [Hardware Options](#specific-hardware-usage)
   - [GGUF Models](#using-gguf-models)
   - [Quantization](#quantized-models-for-better-performance)
-- [API Endpoints](#api-endpoints)
+- [🔗 API Endpoints](#-api-endpoints)
   - [Completions API](#completions-api)
   - [Chat Completions API](#chat-completions-api)
   - [Models API](#models-api)
   - [Model Management API](#model-management-api)
-- [Advanced Configuration](#advanced-configuration)
+- [⚙️ Advanced Configuration](#-advanced-configuration)
   - [Package Structure](#package-structure)
   - [Command Line Options](#command-line-options)
-- [Hardware Recommendations](#hardware-recommendations)
-- [Model Format Recommendations](#model-format-recommendations)
-- [Contributing](#contributing)
-- [License](#license)
+- [🖥️ Hardware Recommendations](#-hardware-recommendations)
+- [💾 Model Format Recommendations](#-model-format-recommendations)
+- [👷 Contributing](#-contributing)
+- [📜 License](#-license)
 
-## Installation
+## 📍 Installation
 
-### Basic Installation
+<div align="center">
 
-```bash
-pip install inferno
-```
+| Installation Type | Command |
+|:----------------:|:-------:|
+| **Basic Installation** | `pip install inferno` |
+| **With TPU Support** | `pip install "inferno[tpu]"` |
+| **With GGUF Support** | `pip install "inferno[gguf]"` |
+| **Full Installation** | `pip install "inferno[tpu,gguf]"` |
 
-### With TPU Support
-
-```bash
-pip install "inferno[tpu]"
-```
-
-### With GGUF Support
-
-```bash
-pip install "inferno[gguf]"
-```
-
-### Full Installation
-
-```bash
-pip install "inferno[tpu,gguf]"
-```
+</div>
 
 ### Development Installation
 
@@ -69,33 +71,53 @@ cd inferno
 pip install -e .
 ```
 
-## Recent Updates
+## 🔥 Recent Updates
 
-### Universal Model Compatibility
+<div align="center">
+
+### 🌐 Universal Model Compatibility
+
+</div>
 
 Inferno now supports running **any language model** from any source:
 
-1. **All Model Architectures**: LLaMA, Mistral, Mixtral, Gemma, Phi, Qwen, Falcon, and more
-2. **All Model Formats**: PyTorch, Safetensors, GGUF, GGML
-3. **All Model Sources**: Hugging Face, local files, custom repositories
-4. **All Model Sizes**: From tiny 1B models to massive 70B+ models
-5. **Zero Configuration**: Just provide the model path, and Inferno handles the rest
+<div align="center">
 
-### Multi-Model Support with Automatic Memory Management
+| Feature | Description |
+|:-------:|:-----------:|
+| **All Model Architectures** | LLaMA, Mistral, Mixtral, Gemma, Phi, Qwen, Falcon, and more |
+| **All Model Formats** | PyTorch, Safetensors, GGUF, GGML |
+| **All Model Sources** | Hugging Face, local files, custom repositories |
+| **All Model Sizes** | From tiny 1B models to massive 70B+ models |
+| **Zero Configuration** | Just provide the model path, and Inferno handles the rest |
+
+</div>
+
+<div align="center">
+
+### 💾 Multi-Model Support with Automatic Memory Management
+
+</div>
 
 The server now supports running multiple models simultaneously with intelligent memory management across all device types:
 
-1. Load multiple models at startup or dynamically at runtime
-2. Automatic detection of available memory on CPU, GPU, TPU, and Apple Silicon
-3. Dynamic memory allocation that divides available memory equally among models
-4. Device-specific adaptive buffer reservation:
-   - CPU: 20% buffer (minimum 4GB)
-   - CUDA (GPU): 10% buffer (minimum 2GB)
-   - MPS (Apple Silicon): 15% buffer (minimum 2GB)
-   - TPU: 15% buffer (minimum 8GB)
-5. Memory reallocation when models are added or removed
+<div align="center">
 
-### Native Message Format Support
+| Feature | Description |
+|:-------:|:-----------:|
+| **Dynamic Loading** | Load multiple models at startup or dynamically at runtime |
+| **Memory Detection** | Automatic detection of available memory on CPU, GPU, TPU, and Apple Silicon |
+| **Memory Allocation** | Dynamic memory allocation that divides available memory equally among models |
+| **Device-specific Buffers** | CPU: 20% buffer (min 4GB), CUDA: 10% buffer (min 2GB), MPS: 15% buffer (min 2GB), TPU: 15% buffer (min 8GB) |
+| **Memory Rebalancing** | Memory reallocation when models are added or removed |
+
+</div>
+
+<div align="center">
+
+### 💬 Native Message Format Support
+
+</div>
 
 The server now uses the native role (message) feature of transformers and llama-cpp-python:
 
@@ -105,51 +127,54 @@ The server now uses the native role (message) feature of transformers and llama-
 4. Updated the chat completion and completion endpoints to pass messages to the model
 
 
-## Features
+## ✨ Features
 
-- **Universal Model Compatibility**:
-  - Run **any language model** from Hugging Face, local files, or custom sources
-  - Support for all major model architectures (LLaMA, Mistral, Qwen, Phi, Gemma, Falcon, etc.)
-  - Automatic model format detection and appropriate loading strategy
-  - Seamless handling of different model types and architectures
-  - Zero configuration needed for most models - just provide the model path
+<div align="center">
 
-- **Multi-Model Support**:
-  - Run multiple models simultaneously on the same server
-  - Dynamic model loading and unloading at runtime without server restart
-  - Automatic memory detection and allocation across all device types
-  - Device-specific memory management with optimized buffer allocation
-  - Memory rebalancing when models are added or removed
-  - Model registry with metadata tracking and versioning
-  - API endpoints for comprehensive model management
+| 🌐 **Universal Model Compatibility** | 🔄 **Multi-Model Support** | 🖥️ **Multi-Hardware Support** |
+|:--------------------------------:|:------------------------:|:---------------------------:|
+| Run **any language model** from Hugging Face, local files, or custom sources | Run multiple models simultaneously on the same server | Automatic device detection (CPU, GPU, TPU, Apple Silicon) |
+| Support for all major model architectures (LLaMA, Mistral, Qwen, Phi, Gemma, Falcon, etc.) | Dynamic model loading and unloading at runtime without server restart | Run on any available hardware with zero configuration |
+| Automatic model format detection and appropriate loading strategy | Automatic memory detection and allocation across all device types | Graceful fallbacks when requested hardware is unavailable |
+| Seamless handling of different model types and architectures | Device-specific memory management with optimized buffer allocation | Full support for Apple Silicon (M1/M2/M3) via MPS backend |
+| Zero configuration needed for most models - just provide the model path | Memory rebalancing when models are added or removed | Automatic TPU memory detection and optimization |
 
-- **Multi-Hardware Support**:
-  - Automatic device detection (CPU, GPU, TPU, Apple Silicon)
-  - Run on any available hardware with zero configuration
-  - Graceful fallbacks when requested hardware is unavailable
-  - Full support for Apple Silicon (M1/M2/M3) via MPS backend
-  - Automatic TPU memory detection and optimization
-- **Model Format Flexibility**:
-  - Support for all popular model formats (PyTorch, Safetensors, GGUF, GGML)
-  - Use fp16 models (default and recommended for most use cases)
-  - Support for GGUF models with optimized performance on all hardware
-  - Automatic GGUF model download from Hugging Face with progress bar
-  - Compatible with multiple versions of llama-cpp-python
-  - Automatic format conversion when needed for optimal performance
-- **GGUF Metadata Extraction**:
-  - Automatically reads metadata from GGUF files
-  - Extracts and uses chat templates from GGUF models
-  - Provides model architecture and context length information
-- **ChatTemplate Support**:
-  - Automatically uses model-specific chat templates when available
-  - Extracts chat templates from GGUF files
-  - Falls back to architecture-specific templates when needed
-- **Quantization Options**: Support for 4-bit and 8-bit quantization
-- **OpenAI-Compatible API**: Drop-in replacement for OpenAI API clients
-- **Streaming Support**: Real-time text generation with streaming responses
-- **Security**: Optional API key authentication
+</div>
+<div align="center">
 
-## Usage
+| 💾 **Model Format Flexibility** | 📂 **GGUF Metadata Extraction** | 💬 **ChatTemplate Support** |
+|:--------------------------------:|:------------------------:|:---------------------------:|
+| Support for all popular model formats (PyTorch, Safetensors, GGUF, GGML) | Automatically reads metadata from GGUF files | Automatically uses model-specific chat templates when available |
+| Use fp16 models (default and recommended for most use cases) | Extracts and uses chat templates from GGUF models | Extracts chat templates from GGUF files |
+| Support for GGUF models with optimized performance on all hardware | Provides model architecture and context length information | Falls back to architecture-specific templates when needed |
+| Automatic GGUF model download from Hugging Face with progress bar | | |
+| Compatible with multiple versions of llama-cpp-python | | |
+
+</div>
+
+<div align="center">
+
+| 💽 **Quantization Options** | 🔗 **OpenAI-Compatible API** | 📰 **Streaming Support** | 🔒 **Security** |
+|:--------------------------------:|:------------------------:|:---------------------------:|:---------------------------:|
+| Support for 4-bit and 8-bit quantization | Drop-in replacement for OpenAI API clients | Real-time text generation with streaming responses | Optional API key authentication |
+
+</div>
+
+## 🔹 Usage
+
+<div align="center">
+
+### 🔥 Quick Start 🔥
+
+```bash
+# Install Inferno
+pip install inferno
+
+# Run any model with one command
+inferno --model mistralai/Mistral-7B-Instruct-v0.2
+```
+
+</div>
 
 ### Command Line
 
@@ -350,9 +375,13 @@ inferno --model meta-llama/Llama-2-7b-chat-hf --api-keys "key1,key2,key3"
 inferno --model mistralai/Mistral-7B-Instruct-v0.2 --additional-models google/gemma-7b-it --api-keys "key1,key2,key3"
 ```
 
-## API Endpoints
+## 🔗 API Endpoints
 
-The server implements OpenAI-compatible endpoints for easy integration as well as model management endpoints:
+<div align="center">
+
+### The server implements OpenAI-compatible endpoints for easy integration as well as model management endpoints
+
+</div>
 
 ### Completions API
 
@@ -417,7 +446,7 @@ curl -X POST "http://localhost:8000/admin/shutdown" \
   -H "Content-Type: application/json"
 ```
 
-## Advanced Configuration
+## ⚙️ Advanced Configuration
 
 ### Package Structure
 
@@ -475,22 +504,38 @@ inferno/
 --num-gpu-layers     Number of GPU layers for GGUF models (-1 means all)
 ```
 
-## Hardware Recommendations
+## 🖥️ Hardware Recommendations
 
-- **Auto-detect**: For most users, use the default auto-detection for the best experience
-- **GPU**: For best performance, use NVIDIA GPUs with at least 8GB VRAM
-- **CPU**: For CPU-only deployment, consider using quantized models (4-bit or 8-bit)
-- **TPU**: When using Google Cloud TPUs, use bfloat16 precision for optimal performance
-- **Apple Silicon**: For Mac users with M1/M2/M3 chips, the MPS backend provides GPU acceleration
+<div align="center">
 
-## Model Format Recommendations
+| Hardware | Recommendation |
+|:--------:|:--------------:|
+| **Auto-detect** | For most users, use the default auto-detection for the best experience |
+| **GPU** | For best performance, use NVIDIA GPUs with at least 8GB VRAM |
+| **CPU** | For CPU-only deployment, consider using quantized models (4-bit or 8-bit) |
+| **TPU** | When using Google Cloud TPUs, use bfloat16 precision for optimal performance |
+| **Apple Silicon** | For Mac users with M1/M2/M3 chips, the MPS backend provides GPU acceleration |
 
-- **fp16**: Default and recommended for most hardware (GPU, CPU)
-- **GGUF**: Use when needed for specific hardware compatibility or when memory optimization is critical
+</div>
 
-## Contributing
+## 💾 Model Format Recommendations
 
-Contributions are welcome! Here's how you can contribute to Inferno:
+<div align="center">
+
+| Format | Recommendation |
+|:------:|:--------------:|
+| **fp16** | Default and recommended for most hardware (GPU, CPU) |
+| **GGUF** | Use when needed for specific hardware compatibility or when memory optimization is critical |
+
+</div>
+
+## 👷 Contributing
+
+<div align="center">
+
+### Contributions are welcome! Here's how you can contribute to Inferno:
+
+</div>
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/my-new-feature`
@@ -500,9 +545,15 @@ Contributions are welcome! Here's how you can contribute to Inferno:
 
 Please make sure to update tests as appropriate and follow the code style of the project.
 
-## License
+## 📜 License
 
-Inferno is released under the HelpingAI Open Source License v1.0, a permissive open source license that allows for:
+<div align="center">
+
+### Inferno is released under the HelpingAI Open Source License v1.0
+
+</div>
+
+This is a permissive open source license that allows for:
 
 - Use for any purpose, including commercial applications
 - Modification and creation of derivative works
@@ -510,3 +561,11 @@ Inferno is released under the HelpingAI Open Source License v1.0, a permissive o
 - Private and commercial use
 
 The license requires attribution and includes standard disclaimers of warranty and liability. See the [LICENSE](LICENSE) file for complete details.
+
+<div align="center">
+
+---
+
+<p>🔥 <strong>Inferno</strong> - Making advanced AI deployment accessible to everyone 🔥</p>
+
+</div>

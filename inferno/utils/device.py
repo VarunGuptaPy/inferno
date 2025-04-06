@@ -45,11 +45,12 @@ except ImportError:
     pass
 
 # Check for MPS (Apple Silicon) support
-if hasattr(torch, "has_mps") and torch.has_mps:
+if hasattr(torch.backends, "mps") and torch.backends.mps.is_built():
     try:
-        # Further verify by trying to create a tensor
-        torch.zeros(1).to("mps")
-        MPS_AVAILABLE = True
+        # Further verify by trying to create a tensor and checking if MPS is available
+        if torch.backends.mps.is_available():
+            torch.zeros(1).to("mps")
+            MPS_AVAILABLE = True
     except Exception:
         pass
 
