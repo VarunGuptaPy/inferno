@@ -1,6 +1,6 @@
 """Inferno: A professional inference server for HelpingAI models."""
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __author__ = "HelpingAI"
 __email__ = "info@helpingai.com"
 

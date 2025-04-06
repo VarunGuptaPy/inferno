@@ -1,14 +1,19 @@
 from setuptools import setup, find_packages
+import os
 
 # Import version from package
 from inferno import __version__, __author__, __email__
+
+# Read the README.md file for long description
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
 
 setup(
     name="HelpingAI-inferno",  # Changed from "inferno" to "HelpingAI-inferno"
     version=__version__,
     description="A professional, production-ready inference server for running any AI model with universal model compatibility and multi-hardware support",
-    long_description="Inferno is a high-performance inference server that can run any AI model from Hugging Face, local files, or GGUF format. It features automatic memory management, hardware detection, and supports CPU, GPU, TPU, and Apple Silicon platforms.",
-    long_description_content_type="text/plain",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     author=__author__,
     author_email=__email__,
     url="https://github.com/HelpingAI/inferno",

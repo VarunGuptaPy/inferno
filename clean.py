@@ -21,7 +21,7 @@ class DirectoryCleaner:
     BUILD_ARTIFACTS = frozenset({
         "build",
         "dist",
-        "inferno.egg-info",
+        "HelpingAI_inferno.egg-info",
         ".qodo"
     })
 
