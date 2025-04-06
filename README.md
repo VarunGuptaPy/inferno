@@ -318,6 +318,9 @@ inferno server --enable-gguf --download-gguf --model TheBloke/Qwen1.5-7B-Chat-GG
 
 # Download a GGUF model directly
 inferno model download TheBloke/Mistral-7B-Instruct-v0.2-GGUF
+
+# Run a GGUF model with a custom context size (8K tokens)
+inferno server --enable-gguf --gguf-path path/to/model.gguf --context-size 8192
 ```
 
 #### GGUF Model Features
@@ -583,6 +586,7 @@ inferno util benchmark --model mistralai/Mistral-7B-Instruct-v0.2 --num-requests
 --download-gguf      Download GGUF model from Hugging Face (if available)
 --gguf-filename      Specific GGUF filename to download (e.g., 'model-q4_k_m.gguf')
 --num-gpu-layers     Number of GPU layers for GGUF models (-1 means all)
+--context-size       Context size for GGUF models in tokens (default: 4096)
 ```
 
 ## 🖥️ Hardware Recommendations

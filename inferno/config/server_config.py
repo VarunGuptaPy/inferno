@@ -37,6 +37,7 @@ class ServerConfig:
     download_gguf: bool = False
     gguf_filename: Optional[str] = None
     num_gpu_layers: int = -1  # -1 means all layers
+    context_size: int = 4096  # Default context size (4K tokens)
 
     # Server configuration
     host: str = "0.0.0.0"
@@ -107,7 +108,8 @@ class ServerConfig:
                     "path": self.gguf_path,
                     "download": self.download_gguf,
                     "filename": self.gguf_filename,
-                    "num_gpu_layers": self.num_gpu_layers
+                    "num_gpu_layers": self.num_gpu_layers,
+                    "context_size": self.context_size
                 }
             },
             "hardware": {
@@ -161,6 +163,7 @@ class ServerConfig:
         download_gguf = gguf.get("download", False)
         gguf_filename = gguf.get("filename")
         num_gpu_layers = gguf.get("num_gpu_layers", -1)
+        context_size = gguf.get("context_size", 4096)
 
         # Extract hardware configuration
         hardware = config_dict.get("hardware", {})
@@ -204,6 +207,7 @@ class ServerConfig:
             download_gguf=download_gguf,
             gguf_filename=gguf_filename,
             num_gpu_layers=num_gpu_layers,
+            context_size=context_size,
             host=host,
             port=port,
             api_keys=api_keys,
@@ -255,6 +259,7 @@ class ServerConfig:
             download_gguf=args.download_gguf if hasattr(args, 'download_gguf') else False,
             gguf_filename=args.gguf_filename if hasattr(args, 'gguf_filename') else None,
             num_gpu_layers=args.num_gpu_layers if hasattr(args, 'num_gpu_layers') else -1,
+            context_size=args.context_size if hasattr(args, 'context_size') else 4096,
             host=args.host if hasattr(args, 'host') else "0.0.0.0",
             port=args.port if hasattr(args, 'port') else 8000,
             api_keys=api_keys,

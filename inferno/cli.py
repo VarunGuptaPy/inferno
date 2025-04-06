@@ -23,6 +23,8 @@ from typing import Any, Dict, List, Optional, Callable, Union, Type
 from functools import wraps
 from pathlib import Path
 
+# Import version from package
+from inferno import __version__
 # Rich for beautiful terminal output
 try:
     from rich.console import Console
@@ -511,7 +513,7 @@ def argument(name, **attrs):
 # Create the CLI application
 app = InfernoCLI(
     name="inferno",
-    version="0.1.0",
+    version=__version__,
     help="A professional inference server for HelpingAI models"
 )
 
@@ -662,6 +664,7 @@ def info(model_path):
 @option("--download-gguf", help="Download GGUF model from Hugging Face", is_flag=True)
 @option("--gguf-filename", help="Specific GGUF filename to download")
 @option("--num-gpu-layers", help="Number of GPU layers for GGUF models", type=int, default=-1)
+@option("--context-size", help="Context size for GGUF models (in tokens)", type=int, default=4096)
 def server(**kwargs):
     """Start the Inferno server"""
     # Set up logging
@@ -715,7 +718,8 @@ def server(**kwargs):
             "gguf_path": kwargs.get('gguf_path'),
             "download_gguf": kwargs.get('download_gguf', False),
             "gguf_filename": kwargs.get('gguf_filename'),
-            "num_gpu_layers": kwargs.get('num_gpu_layers', -1)
+            "num_gpu_layers": kwargs.get('num_gpu_layers', -1),
+            "context_size": kwargs.get('context_size', 4096)
         },
         "server": {
             "host": kwargs.get('host', "0.0.0.0"),
@@ -741,7 +745,6 @@ def server(**kwargs):
 @app.command()
 def version():
     """Show the Inferno version"""
-    from inferno import __version__
     console.print(f"Inferno version {__version__}")
 
 

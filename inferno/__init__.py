@@ -5,8 +5,12 @@ __author__ = "HelpingAI"
 __email__ = "info@helpingai.com"
 
 from inferno.config.server_config import ServerConfig
-from inferno.models.registry import MODEL_REGISTRY
-from inferno.cli import main
+
+# Import CLI app for direct access
+from inferno.cli import app, main
+
+# Export these symbols for external use
+__all__ = ['ServerConfig', 'app', 'main', 'run_server']
 
 # Convenience function to run the server
 def run_server(config=None, **kwargs):
@@ -20,11 +24,15 @@ def run_server(config=None, **kwargs):
     from inferno.main import run_server as _run_server
 
     if config is None:
-        # Parse command line arguments
-        from inferno.cli import parse_args, setup_logging
-        args = parse_args()
-        setup_logging(args)
-        config = ServerConfig.from_args(args)
+        # Create a server configuration from kwargs or CLI
+        if kwargs:
+            # Create config from kwargs
+            config = ServerConfig(**kwargs)
+        else:
+            # Use the CLI to run the server with default settings
+            # This will start the server directly
+            app.run(['server'])
+            return
 
     # Update config with additional arguments
     for key, value in kwargs.items():

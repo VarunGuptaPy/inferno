@@ -2,7 +2,6 @@ import os
 import torch
 import gc
 from typing import Dict, Any, Optional, Tuple, Union
-import hashlib
 
 from inferno.utils.logger import get_logger
 from inferno.config.server_config import ServerConfig
@@ -14,21 +13,44 @@ logger = get_logger(__name__)
 
 def generate_model_id(model_path: str) -> str:
     """
-    Generate a unique model ID from the model path.
+    Generate a model ID from the model path.
 
     Args:
         model_path: Path or name of the model
 
     Returns:
-        Unique model ID
+        Model ID (just the model name without any hash)
     """
-    # Use the last part of the path as the base ID
-    base_id = model_path.split('/')[-1]
+    # Handle empty or None input
+    if not model_path:
+        return "unknown_model"
 
-    # Add a hash of the full path to ensure uniqueness
-    path_hash = hashlib.md5(model_path.encode()).hexdigest()[:8]
+    # Check if it looks like a Hugging Face model path (contains '/' but doesn't exist as a file)
+    if '/' in model_path and not os.path.exists(model_path) and not '\\' in model_path:
+        # For Hugging Face models, use the last part of the path
+        model_id = model_path.split('/')[-1]
+    else:
+        # For local paths, use the directory or file name
+        try:
+            path = os.path.normpath(model_path)
+            model_id = os.path.basename(path)
 
-    return f"{base_id}-{path_hash}"
+            # If the model_id is empty (e.g., for paths ending with /), use the parent directory
+            if not model_id:
+                model_id = os.path.basename(os.path.dirname(path))
+        except Exception:
+            # If there's any error processing the path, use the last part of the path
+            parts = model_path.replace('\\', '/').split('/')
+            model_id = parts[-1] if parts[-1] else parts[-2] if len(parts) > 1 else model_path
+
+    # Ensure we have a clean model ID (no special characters)
+    model_id = model_id.strip()
+
+    # If we still don't have a valid model_id, use a generic name
+    if not model_id:
+        model_id = "local_model"
+
+    return model_id
 
 
 def extract_model_metadata(model, tokenizer, config) -> Dict[str, Any]:
@@ -197,7 +219,7 @@ def load_gguf_model(config: ServerConfig) -> Tuple[Any, Any, Dict[str, Any]]:
         model = Llama(
             model_path=gguf_path,
             n_gpu_layers=config.num_gpu_layers,
-            n_ctx=2048,  # Default context size, can be adjusted
+            n_ctx=config.context_size,  # Use the configured context size (default: 4096)
             verbose=False
         )
 

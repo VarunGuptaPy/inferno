@@ -1,13 +1,16 @@
 from setuptools import setup, find_packages
 
+# Import version from package
+from inferno import __version__, __author__, __email__
+
 setup(
     name="inferno",
-    version="0.1.0",
+    version=__version__,
     description="A professional, production-ready inference server for running any AI model with universal model compatibility and multi-hardware support",
     long_description="Inferno is a high-performance inference server that can run any AI model from Hugging Face, local files, or GGUF format. It features automatic memory management, hardware detection, and supports CPU, GPU, TPU, and Apple Silicon platforms.",
     long_description_content_type="text/plain",
-    author="HelpingAI",
-    author_email="team@helpingai.co",
+    author=__author__,
+    author_email=__email__,
     url="https://github.com/HelpingAI/inferno",
     packages=find_packages(),
     install_requires=[
