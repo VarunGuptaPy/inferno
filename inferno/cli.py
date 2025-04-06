@@ -526,50 +526,109 @@ def model():
 
 
 @model.command()
-@argument("model_path", help="Path to the model to download")
-@option("--revision", "-r", help="Specific model revision to download")
+@argument("model_path", help="Primary model to download (or comma-separated list of models)")
+@option("--revision", "-r", help="Specific model revision to download (applies to primary model only)")
 @option("--force", "-f", help="Force re-download even if model exists", is_flag=True)
-def download(model_path, revision=None, force=False):
-    """Download a model from Hugging Face"""
+@option("--additional-models", help="Additional models to download (comma-separated list or multiple arguments)", multiple=True)
+def download(model_path, revision=None, force=False, additional_models=None):
+    """Download one or more models from Hugging Face
+
+    Examples:
+        inferno model download mistralai/Mistral-7B-Instruct-v0.2
+        inferno model download mistralai/Mistral-7B-Instruct-v0.2 --additional-models google/gemma-7b-it microsoft/phi-2
+        inferno model download mistralai/Mistral-7B-Instruct-v0.2 --additional-models "google/gemma-7b-it,microsoft/phi-2"
+        inferno model download "mistralai/Mistral-7B-Instruct-v0.2,google/gemma-7b-it,microsoft/phi-2"
+    """
     # Skip execution if model_path is a help flag (this is a workaround for the help system)
     if model_path in ["-h", "--help"]:
         return None
 
-    try:
-        from huggingface_hub import snapshot_download
-        import os
+    from huggingface_hub import snapshot_download
+    import os
 
-        console.print(f"Downloading model: {model_path}")
-        if revision:
-            console.print(f"Revision: {revision}")
+    # Process model paths
+    models_to_download = []
 
-        # Create a progress context
-        if RICH_AVAILABLE:
-            from rich.progress import Progress
-            with Progress() as progress:
-                task = progress.add_task(f"Downloading {model_path}...", total=None)
+    # Check if model_path contains multiple models
+    if "," in model_path:
+        models_to_download.extend([m.strip() for m in model_path.split(",")])
+    else:
+        # Add the primary model
+        models_to_download.append(model_path)
 
-                # Download the model
+    # Add additional models if specified
+    if additional_models:
+        # Check if it's already a list (from command line space-separated arguments)
+        if isinstance(additional_models, list):
+            models_to_download.extend(additional_models)
+        # Otherwise, treat it as a comma-separated string
+        else:
+            models_to_download.extend([m.strip() for m in additional_models.split(",")])
+
+    # Remove any empty strings
+    models_to_download = [m for m in models_to_download if m]
+
+    console.print(f"Preparing to download {len(models_to_download)} model(s)")
+
+    # Track successful and failed downloads
+    successful = []
+    failed = []
+
+    # Download each model
+    for i, model in enumerate(models_to_download, 1):
+        console.print(f"\n[bold]Downloading model {i}/{len(models_to_download)}: {model}[/bold]")
+
+        # Only apply revision to the primary model if it was specified as a single model
+        current_revision = revision if i == 1 and len(models_to_download) == 1 and "," not in model_path else None
+        if current_revision:
+            console.print(f"Revision: {current_revision}")
+
+        try:
+            # Create a progress context
+            if RICH_AVAILABLE:
+                from rich.progress import Progress
+                with Progress() as progress:
+                    task = progress.add_task(f"Downloading {model}...", total=None)
+
+                    # Download the model
+                    path = snapshot_download(
+                        repo_id=model,
+                        revision=current_revision,
+                        force_download=force
+                    )
+
+                    progress.update(task, completed=True)
+            else:
+                # Fallback without rich progress bar
                 path = snapshot_download(
-                    repo_id=model_path,
-                    revision=revision,
+                    repo_id=model,
+                    revision=current_revision,
                     force_download=force
                 )
 
-                progress.update(task, completed=True)
-        else:
-            # Fallback without rich progress bar
-            path = snapshot_download(
-                repo_id=model_path,
-                revision=revision,
-                force_download=force
-            )
+            console.print(f"[green]Model {model} downloaded successfully to: {path}[/green]")
+            successful.append({"model": model, "path": path})
+        except Exception as e:
+            console.print(f"[red]Error downloading model {model}: {str(e)}[/red]")
+            failed.append({"model": model, "error": str(e)})
 
-        console.print(f"[green]Model downloaded successfully to: {path}[/green]")
-        return path
-    except Exception as e:
-        console.print(f"[red]Error downloading model: {str(e)}[/red]")
-        return None
+    # Print summary
+    console.print("\n[bold]Download Summary:[/bold]")
+    console.print(f"Total models: {len(models_to_download)}")
+    console.print(f"Successfully downloaded: {len(successful)}")
+    console.print(f"Failed: {len(failed)}")
+
+    if successful:
+        console.print("\n[green]Successfully downloaded models:[/green]")
+        for i, item in enumerate(successful, 1):
+            console.print(f"  {i}. {item['model']} -> {item['path']}")
+
+    if failed:
+        console.print("\n[red]Failed downloads:[/red]")
+        for i, item in enumerate(failed, 1):
+            console.print(f"  {i}. {item['model']}: {item['error']}")
+
+    return successful
 
 
 @model.command()
@@ -655,7 +714,7 @@ def info(model_path):
 @option("--timeout", help="Timeout for requests in seconds", type=int, default=60)
 @option("--log-level", help="Log level", default="info")
 @option("--log-file", help="Log file path (logs to console if not specified)")
-@option("--additional-models", help="Additional models to load (comma-separated list)")
+@option("--additional-models", help="Additional models to load (comma-separated list or multiple arguments)", multiple=True)
 @option("--use-tpu", help="Enable TPU support (requires torch_xla)", is_flag=True)
 @option("--tpu-cores", help="Number of TPU cores to use", type=int, default=8)
 @option("--tpu-memory-limit", help="Memory limit for TPU", default="90GB")
@@ -683,7 +742,12 @@ def server(**kwargs):
     # Process additional models
     additional_models = []
     if kwargs.get('additional_models'):
-        additional_models = [m.strip() for m in kwargs['additional_models'].split(',')]
+        # Check if it's already a list (from command line space-separated arguments)
+        if isinstance(kwargs['additional_models'], list):
+            additional_models = kwargs['additional_models']
+        # Otherwise, treat it as a comma-separated string
+        else:
+            additional_models = [m.strip() for m in kwargs['additional_models'].split(',')]
         kwargs['additional_models'] = additional_models
 
     # Process API keys
