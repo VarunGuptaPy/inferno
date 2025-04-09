@@ -10,6 +10,7 @@ from inferno.config.server_config import ServerConfig
 from inferno.models.registry import MODEL_REGISTRY
 from inferno.models.loader import load_and_register_model, unload_and_unregister_model
 from inferno.server.task_queue import TaskQueue
+from inferno.server.generation import generate_completion, generate_chat_completion
 
 logger = get_logger(__name__)
 
@@ -146,25 +147,37 @@ def register_openai_routes(app: FastAPI, config: ServerConfig):
         if model_info is None:
             raise HTTPException(status_code=404, detail="Model not found")
 
-        # Add the task to the queue
+        # Generate the completion
         task_id = f"completion-{int(time.time() * 1000)}"
 
-        # TODO: Implement actual completion generation
-        # This is a placeholder implementation
-        completion_text = f"This is a placeholder completion for: {request.prompt}"
+        try:
+            # Call the generation function
+            completion_text, finish_reason = generate_completion(
+                model_info=model_info,
+                prompt=request.prompt,
+                max_tokens=request.max_tokens,
+                temperature=request.temperature,
+                top_p=request.top_p,
+                frequency_penalty=request.frequency_penalty,
+                presence_penalty=request.presence_penalty,
+                stop=request.stop
+            )
 
-        return {
-            "id": task_id,
-            "created": int(time.time()),
-            "model": model_info.model_id,
-            "choices": [
-                {
-                    "text": completion_text,
-                    "index": 0,
-                    "finish_reason": "length"
-                }
-            ]
-        }
+            return {
+                "id": task_id,
+                "created": int(time.time()),
+                "model": model_info.model_id,
+                "choices": [
+                    {
+                        "text": completion_text,
+                        "index": 0,
+                        "finish_reason": finish_reason
+                    }
+                ]
+            }
+        except Exception as e:
+            logger.error(f"Error generating completion: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
 
     @router.post("/chat/completions", response_model=ChatCompletionResponse)
     async def create_chat_completion(request: ChatCompletionRequest, background_tasks: BackgroundTasks):
@@ -176,29 +189,43 @@ def register_openai_routes(app: FastAPI, config: ServerConfig):
         if model_info is None:
             raise HTTPException(status_code=404, detail="Model not found")
 
-        # Add the task to the queue
+        # Generate the chat completion
         task_id = f"chat-completion-{int(time.time() * 1000)}"
 
-        # TODO: Implement actual chat completion generation
-        # This is a placeholder implementation
-        last_message = request.messages[-1].content if request.messages else ""
-        completion_text = f"This is a placeholder chat response to: {last_message}"
+        try:
+            # Convert Pydantic models to dictionaries
+            messages = [msg.model_dump() for msg in request.messages]
 
-        return {
-            "id": task_id,
-            "created": int(time.time()),
-            "model": model_info.model_id,
-            "choices": [
-                {
-                    "message": {
-                        "role": "assistant",
-                        "content": completion_text
-                    },
-                    "index": 0,
-                    "finish_reason": "length"
-                }
-            ]
-        }
+            # Call the generation function
+            completion_text, finish_reason = generate_chat_completion(
+                model_info=model_info,
+                messages=messages,
+                max_tokens=request.max_tokens,
+                temperature=request.temperature,
+                top_p=request.top_p,
+                frequency_penalty=request.frequency_penalty,
+                presence_penalty=request.presence_penalty,
+                stop=request.stop
+            )
+
+            return {
+                "id": task_id,
+                "created": int(time.time()),
+                "model": model_info.model_id,
+                "choices": [
+                    {
+                        "message": {
+                            "role": "assistant",
+                            "content": completion_text
+                        },
+                        "index": 0,
+                        "finish_reason": finish_reason
+                    }
+                ]
+            }
+        except Exception as e:
+            logger.error(f"Error generating chat completion: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
 
     app.include_router(router)
 

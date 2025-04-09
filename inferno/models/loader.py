@@ -160,12 +160,21 @@ def load_hf_model(config: ServerConfig) -> Tuple[Any, Any, Dict[str, Any]]:
             use_fast=True
         )
 
+        # Ensure the tokenizer has padding token
+        if tokenizer.pad_token is None:
+            if tokenizer.eos_token is not None:
+                tokenizer.pad_token = tokenizer.eos_token
+            else:
+                logger.warning("Tokenizer has no pad_token or eos_token, setting pad_token to a default value")
+                tokenizer.pad_token = "<pad>"
+
         # Set up loading parameters
         load_params = {
             "pretrained_model_name_or_path": config.model_name_or_path,
             "revision": config.model_revision,
             "torch_dtype": torch_dtype,
             "device_map": config.device_map,
+            "trust_remote_code": True
         }
 
         # Add quantization parameters if needed
@@ -178,8 +187,33 @@ def load_hf_model(config: ServerConfig) -> Tuple[Any, Any, Dict[str, Any]]:
         # Load the model
         model = AutoModelForCausalLM.from_pretrained(**load_params)
 
+        # Check if the model has a chat template
+        has_chat_template = hasattr(tokenizer, 'chat_template') and tokenizer.chat_template is not None
+
+        # For HelpingAI models, ensure they have a chat template
+        if 'helpingai' in config.model_name_or_path.lower() and not has_chat_template:
+            logger.info("Setting chat template for HelpingAI model")
+            # Use a generic ChatML template which works well with HelpingAI models
+            tokenizer.chat_template = "{% for message in messages %}"
+            tokenizer.chat_template += "{% if message['role'] == 'system' %}"
+            tokenizer.chat_template += "<|im_start|>system\n{{ message['content'] }}<|im_end|>\n"
+            tokenizer.chat_template += "{% elif message['role'] == 'user' %}"
+            tokenizer.chat_template += "<|im_start|>user\n{{ message['content'] }}<|im_end|>\n"
+            tokenizer.chat_template += "{% elif message['role'] == 'assistant' %}"
+            tokenizer.chat_template += "<|im_start|>assistant\n{{ message['content'] }}<|im_end|>\n"
+            tokenizer.chat_template += "{% endif %}"
+            tokenizer.chat_template += "{% endfor %}"
+            tokenizer.chat_template += "{% if add_generation_prompt %}"
+            tokenizer.chat_template += "<|im_start|>assistant\n"
+            tokenizer.chat_template += "{% endif %}"
+
         # Extract metadata
         metadata = extract_model_metadata(model, tokenizer, model.config)
+
+        # Add chat template information to metadata
+        metadata['has_chat_template'] = has_chat_template
+        if has_chat_template:
+            metadata['chat_template'] = tokenizer.chat_template
 
         logger.info(f"Successfully loaded model from {config.model_name_or_path}")
         return model, tokenizer, metadata
@@ -215,21 +249,118 @@ def load_gguf_model(config: ServerConfig) -> Tuple[Any, Any, Dict[str, Any]]:
 
         logger.info(f"Loading GGUF model from {gguf_path}")
 
-        # Load the GGUF model
-        model = Llama(
-            model_path=gguf_path,
-            n_gpu_layers=config.num_gpu_layers,
-            n_ctx=config.context_size,  # Use the configured context size (default: 4096)
-            verbose=False
-        )
+        # Check if chat format is specified in the config
+        chat_format = config.chat_format
+
+        # If not specified, try to determine from the model name
+        if not chat_format:
+            model_base_name = config.model_name_or_path.split('/')[-1].lower()
+
+            # Try to determine the chat format based on the model name
+            if 'llama' in model_base_name:
+                chat_format = 'llama-2'
+            elif 'mistral' in model_base_name:
+                chat_format = 'mistral'
+            elif 'gemma' in model_base_name:
+                chat_format = 'gemma'
+            elif 'phi' in model_base_name:
+                chat_format = 'phi'
+            elif 'helpingai' in model_base_name:
+                chat_format = 'chatml'  # Use chatml format for HelpingAI models
+
+        logger.info(f"Using chat format: {chat_format or 'None (auto-detect)'}")
+
+        # Try to use the from_pretrained method if available (newer versions of llama-cpp-python)
+        try:
+            if hasattr(Llama, 'from_pretrained') and callable(Llama.from_pretrained):
+                logger.info(f"Using Llama.from_pretrained to load model from {config.model_name_or_path}")
+
+                # If we're using a local path, use the regular constructor
+                if gguf_path and os.path.exists(gguf_path):
+                    if chat_format:
+                        model = Llama(
+                            model_path=gguf_path,
+                            n_gpu_layers=config.num_gpu_layers,
+                            n_ctx=config.context_size,
+                            chat_format=chat_format,
+                            verbose=False
+                        )
+                    else:
+                        model = Llama(
+                            model_path=gguf_path,
+                            n_gpu_layers=config.num_gpu_layers,
+                            n_ctx=config.context_size,
+                            verbose=False
+                        )
+                else:
+                    # Use from_pretrained to download and load the model
+                    model = Llama.from_pretrained(
+                        repo_id=config.model_name_or_path,
+                        filename=config.gguf_filename,
+                        n_gpu_layers=config.num_gpu_layers,
+                        n_ctx=config.context_size,
+                        chat_format=chat_format if chat_format else None,
+                        verbose=False
+                    )
+                logger.info("Successfully loaded model using from_pretrained")
+
+            else:
+                # Fall back to the regular constructor
+                if chat_format:
+                    model = Llama(
+                        model_path=gguf_path,
+                        n_gpu_layers=config.num_gpu_layers,
+                        n_ctx=config.context_size,
+                        chat_format=chat_format,
+                        verbose=False
+                    )
+                    logger.info(f"Loaded GGUF model with chat format: {chat_format}")
+                else:
+                    model = Llama(
+                        model_path=gguf_path,
+                        n_gpu_layers=config.num_gpu_layers,
+                        n_ctx=config.context_size,
+                        verbose=False
+                    )
+                    logger.info("Loaded GGUF model without specific chat format")
+        except Exception as e:
+            logger.warning(f"Error using from_pretrained: {e}. Falling back to regular constructor.")
+            # Fall back to the regular constructor
+            if chat_format:
+                model = Llama(
+                    model_path=gguf_path,
+                    n_gpu_layers=config.num_gpu_layers,
+                    n_ctx=config.context_size,
+                    chat_format=chat_format,
+                    verbose=False
+                )
+                logger.info(f"Loaded GGUF model with chat format: {chat_format}")
+            else:
+                model = Llama(
+                    model_path=gguf_path,
+                    n_gpu_layers=config.num_gpu_layers,
+                    n_ctx=config.context_size,
+                    verbose=False
+                )
+                logger.info("Loaded GGUF model without specific chat format")
 
         # Try to load the tokenizer from Hugging Face
         try:
-            tokenizer = AutoTokenizer.from_pretrained(
-                config.tokenizer_name_or_path,
-                revision=config.tokenizer_revision,
-                use_fast=True
-            )
+            # For HelpingAI models, try to load the tokenizer from the specific repo
+            if 'helpingai' in config.model_name_or_path.lower():
+                tokenizer_path = config.tokenizer_name_or_path or "OEvortex/HelpingAI2.5-10B"
+                logger.info(f"Loading HelpingAI tokenizer from {tokenizer_path}")
+                tokenizer = AutoTokenizer.from_pretrained(
+                    tokenizer_path,
+                    revision=config.tokenizer_revision,
+                    use_fast=True
+                )
+            else:
+                tokenizer = AutoTokenizer.from_pretrained(
+                    config.tokenizer_name_or_path,
+                    revision=config.tokenizer_revision,
+                    use_fast=True
+                )
         except Exception as e:
             logger.warning(f"Could not load tokenizer from {config.tokenizer_name_or_path}: {e}")
             tokenizer = None
@@ -240,6 +371,8 @@ def load_gguf_model(config: ServerConfig) -> Tuple[Any, Any, Dict[str, Any]]:
         # Add GGUF-specific metadata
         metadata['is_gguf'] = True
         metadata['gguf_path'] = gguf_path
+        if chat_format:
+            metadata['chat_format'] = chat_format
 
         logger.info(f"Successfully loaded GGUF model from {gguf_path}")
         return model, tokenizer, metadata

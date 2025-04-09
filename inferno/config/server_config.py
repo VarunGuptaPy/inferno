@@ -38,6 +38,7 @@ class ServerConfig:
     gguf_filename: Optional[str] = None
     num_gpu_layers: int = -1  # -1 means all layers
     context_size: int = 4096  # Default context size (4K tokens)
+    chat_format: Optional[str] = None  # Chat format for GGUF models (llama-2, mistral, gemma, phi, etc.)
 
     # Server configuration
     host: str = "0.0.0.0"
@@ -164,6 +165,7 @@ class ServerConfig:
         gguf_filename = gguf.get("filename")
         num_gpu_layers = gguf.get("num_gpu_layers", -1)
         context_size = gguf.get("context_size", 4096)
+        chat_format = gguf.get("chat_format")
 
         # Extract hardware configuration
         hardware = config_dict.get("hardware", {})
@@ -208,6 +210,7 @@ class ServerConfig:
             gguf_filename=gguf_filename,
             num_gpu_layers=num_gpu_layers,
             context_size=context_size,
+            chat_format=chat_format,
             host=host,
             port=port,
             api_keys=api_keys,
@@ -260,6 +263,7 @@ class ServerConfig:
             gguf_filename=args.gguf_filename if hasattr(args, 'gguf_filename') else None,
             num_gpu_layers=args.num_gpu_layers if hasattr(args, 'num_gpu_layers') else -1,
             context_size=args.context_size if hasattr(args, 'context_size') else 4096,
+            chat_format=args.chat_format if hasattr(args, 'chat_format') else None,
             host=args.host if hasattr(args, 'host') else "0.0.0.0",
             port=args.port if hasattr(args, 'port') else 8000,
             api_keys=api_keys,
