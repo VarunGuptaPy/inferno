@@ -212,6 +212,18 @@ inferno info
 inferno util check-dependencies
 ```
 
+#### Running Inferno as a Python Module
+
+If you're working with the source code or have installed Inferno via pip, you can also run it as a Python module:
+
+```bash
+# If installed via pip
+python -m inferno server --model mistralai/Mistral-7B-Instruct-v0.2
+
+# If running from source
+python -m inferno.cli server --model mistralai/Mistral-7B-Instruct-v0.2
+```
+
 ### Python API
 
 You can also use Inferno as a Python library:

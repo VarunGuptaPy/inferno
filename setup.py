@@ -41,6 +41,10 @@ setup(
             "inferno=inferno.cli:main",
         ],
     },
+    package_data={
+        "inferno": ["__main__.py"],
+    },
+    include_package_data=True,
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
