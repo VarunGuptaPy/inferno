@@ -1,8 +1,8 @@
 """Inferno: A professional inference server for HelpingAI models."""
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 __author__ = "HelpingAI"
-__email__ = "info@helpingai.com"
+__email__ = "info@helpingai.co"
 
 from inferno.config.server_config import ServerConfig
 
