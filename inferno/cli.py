@@ -657,6 +657,7 @@ def info(model_path):
 @option("--log-file", help="Log file path (logs to console if not specified)")
 @option("--additional-models", help="Additional models to load (comma-separated list)")
 @option("--use-tpu", help="Enable TPU support (requires torch_xla)", is_flag=True)
+@option("--force-tpu", help="Force TPU usage even if not detected automatically", is_flag=True)
 @option("--tpu-cores", help="Number of TPU cores to use", type=int, default=8)
 @option("--tpu-memory-limit", help="Memory limit for TPU", default="90GB")
 @option("--enable-gguf", help="Enable GGUF model support", is_flag=True)
@@ -710,7 +711,7 @@ def server(**kwargs):
             "load_4bit": kwargs.get('load_4bit', False)
         },
         "tpu": {
-            "use_tpu": kwargs.get('use_tpu', False),
+            "use_tpu": kwargs.get('use_tpu', False) or kwargs.get('force_tpu', False),
             "tpu_cores": kwargs.get('tpu_cores', 8),
             "tpu_memory_limit": kwargs.get('tpu_memory_limit', "90GB")
         },

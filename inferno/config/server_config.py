@@ -28,6 +28,7 @@ class ServerConfig:
     load_8bit: bool = False
     load_4bit: bool = False
     use_tpu: bool = False
+    force_tpu: bool = False  # Force TPU usage even if not detected automatically
     tpu_cores: int = 8
     tpu_memory_limit: str = "90GB"
 
@@ -172,9 +173,13 @@ class ServerConfig:
         device = hardware.get("device", AUTO)
         device_map = hardware.get("device_map", "auto")
         cuda_device_idx = hardware.get("cuda_device_idx", 0)
-        use_tpu = hardware.get("use_tpu", False)
-        tpu_cores = hardware.get("tpu_cores", 8)
-        tpu_memory_limit = hardware.get("tpu_memory_limit", "90GB")
+
+        # Extract TPU configuration
+        tpu_config = config_dict.get("tpu", {})
+        use_tpu = tpu_config.get("use_tpu", False)
+        force_tpu = tpu_config.get("force_tpu", False)
+        tpu_cores = tpu_config.get("tpu_cores", 8)
+        tpu_memory_limit = tpu_config.get("tpu_memory_limit", "90GB")
 
         # Extract server configuration
         server = config_dict.get("server", {})
@@ -202,6 +207,7 @@ class ServerConfig:
             load_8bit=load_8bit,
             load_4bit=load_4bit,
             use_tpu=use_tpu,
+            force_tpu=force_tpu,
             tpu_cores=tpu_cores,
             tpu_memory_limit=tpu_memory_limit,
             enable_gguf=enable_gguf,
@@ -255,6 +261,7 @@ class ServerConfig:
             load_8bit=args.load_8bit if hasattr(args, 'load_8bit') else False,
             load_4bit=args.load_4bit if hasattr(args, 'load_4bit') else False,
             use_tpu=args.use_tpu if hasattr(args, 'use_tpu') else False,
+            force_tpu=args.force_tpu if hasattr(args, 'force_tpu') else False,
             tpu_cores=args.tpu_cores if hasattr(args, 'tpu_cores') else 8,
             tpu_memory_limit=args.tpu_memory_limit if hasattr(args, 'tpu_memory_limit') else "90GB",
             enable_gguf=args.enable_gguf if hasattr(args, 'enable_gguf') else False,

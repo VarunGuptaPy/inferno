@@ -32,17 +32,46 @@ try:
 except ImportError:
     pass
 
+# Check for TPU availability
 try:
-    import torch_xla # type: ignore[import]
-    import torch_xla.core.xla_model as xm # type: ignore[import]
-    # Verify TPU is actually available by trying to get devices
-    try:
-        xm.get_xla_supported_devices()
-        XLA_AVAILABLE = True
-    except Exception:
-        pass
-except ImportError:
-    pass
+    # First check if libtpu.so exists, which is a more reliable indicator
+    import os
+    if os.path.exists('/usr/lib/libtpu.so') or os.path.exists('/lib/libtpu.so'):
+        # Set TPU environment variables early
+        os.environ["PJRT_DEVICE"] = "TPU"
+        os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
+        logger.info("TPU library detected, setting PJRT_DEVICE=TPU")
+
+        # Now try to import torch_xla
+        try:
+            import torch_xla # type: ignore[import]
+            import torch_xla.core.xla_model as xm # type: ignore[import]
+            # Verify TPU is actually available by trying to get devices
+            try:
+                devices = xm.get_xla_supported_devices()
+                if devices:
+                    XLA_AVAILABLE = True
+                    logger.info(f"TPU is available with {len(devices)} devices")
+                else:
+                    logger.warning("No TPU devices found despite libtpu.so being present")
+            except Exception as e:
+                logger.warning(f"Error initializing TPU: {e}")
+        except ImportError as e:
+            logger.warning(f"TPU library detected but torch_xla import failed: {e}")
+            logger.warning("Install with: pip install torch_xla")
+    else:
+        # If no libtpu.so, still try torch_xla as a fallback
+        try:
+            import torch_xla # type: ignore[import]
+            import torch_xla.core.xla_model as xm # type: ignore[import]
+            devices = xm.get_xla_supported_devices()
+            if devices:
+                XLA_AVAILABLE = True
+                logger.info(f"TPU is available with {len(devices)} devices")
+        except (ImportError, Exception):
+            pass
+except Exception as e:
+    logger.warning(f"Error during TPU detection: {e}")
 
 # Check for MPS (Apple Silicon) support
 if hasattr(torch.backends, "mps") and torch.backends.mps.is_built():
@@ -159,6 +188,7 @@ def get_device_info(device_type: str = AUTO) -> Dict[str, Any]:
 def setup_device(device_type: str = AUTO,
                 cuda_device_idx: int = 0,
                 use_tpu: bool = False,
+                force_tpu: bool = False,
                 tpu_cores: int = 8) -> Tuple[str, Optional[int]]:
     """
     Set up the specified device for use.
@@ -172,8 +202,13 @@ def setup_device(device_type: str = AUTO,
     Returns:
         Tuple of (device_type, cuda_device_idx)
     """
+    # If TPU is forced, override device type
+    if force_tpu:
+        logger.info("TPU usage forced by configuration")
+        device_type = XLA
+        use_tpu = True
     # If auto, determine the best available device
-    if device_type == AUTO:
+    elif device_type == AUTO:
         device_type = get_optimal_device()
 
     # Log the selected device
@@ -201,13 +236,31 @@ def setup_device(device_type: str = AUTO,
     elif device_type == MPS and MPS_AVAILABLE:
         logger.info("Using Apple Silicon (MPS) for acceleration")
 
-    elif device_type == XLA and use_tpu and XLA_AVAILABLE:
+    elif (device_type == XLA or use_tpu) and XLA_AVAILABLE:
         logger.info(f"Using TPU with {tpu_cores} cores")
 
-        # Set TPU-specific environment variables
-        os.environ['XLA_USE_BF16'] = '1'  # Enable bfloat16 for better performance
+        # Set TPU-specific environment variables if not already set
+        if "PJRT_DEVICE" not in os.environ:
+            os.environ["PJRT_DEVICE"] = "TPU"
+        if "XLA_PYTHON_CLIENT_PREALLOCATE" not in os.environ:
+            os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
 
-        # Additional TPU setup can be done here
+        # Enable bfloat16 for better performance
+        os.environ['XLA_USE_BF16'] = '1'
+
+        # Set TPU memory allocation strategy
+        os.environ['XLA_TENSOR_ALLOCATOR_MAXSIZE'] = '100000000000'  # ~100GB
+
+        # Try to initialize the TPU device to ensure it's working
+        try:
+            import torch_xla.core.xla_model as xm # type: ignore[import]
+            _ = xm.xla_device()
+            logger.info("TPU device successfully initialized")
+            device_type = XLA
+        except Exception as e:
+            logger.error(f"Failed to initialize TPU device: {e}")
+            logger.warning("Falling back to CPU")
+            device_type = CPU
     else:
         # Fallback to CPU if the requested device is not available
         logger.warning(f"Requested device {device_type} not available. Falling back to CPU.")

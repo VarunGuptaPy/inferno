@@ -185,7 +185,34 @@ def load_hf_model(config: ServerConfig) -> Tuple[Any, Any, Dict[str, Any]]:
             load_params["bnb_4bit_compute_dtype"] = torch_dtype
 
         # Load the model
-        model = AutoModelForCausalLM.from_pretrained(**load_params)
+        if config.use_tpu and config.device == "xla":
+            try:
+                # Special handling for TPU
+                import torch_xla.core.xla_model as xm # type: ignore[import]
+
+                # Get the TPU device
+                device = xm.xla_device()
+                logger.info(f"Loading model on TPU device: {device}")
+
+                # For TPU, we need to modify the device_map
+                load_params["device_map"] = None  # Don't use device_map with TPU
+
+                # Use bfloat16 for TPU
+                load_params["torch_dtype"] = torch.bfloat16
+
+                # Load the model
+                model = AutoModelForCausalLM.from_pretrained(**load_params)
+
+                # Move the model to TPU device
+                model = model.to(device)
+                logger.info("Model successfully loaded and moved to TPU device")
+            except Exception as e:
+                logger.error(f"Error loading model on TPU: {e}")
+                logger.warning("Falling back to standard loading method")
+                model = AutoModelForCausalLM.from_pretrained(**load_params)
+        else:
+            # Standard loading for other devices
+            model = AutoModelForCausalLM.from_pretrained(**load_params)
 
         # Check if the model has a chat template
         has_chat_template = hasattr(tokenizer, 'chat_template') and tokenizer.chat_template is not None
@@ -346,21 +373,11 @@ def load_gguf_model(config: ServerConfig) -> Tuple[Any, Any, Dict[str, Any]]:
 
         # Try to load the tokenizer from Hugging Face
         try:
-            # For HelpingAI models, try to load the tokenizer from the specific repo
-            if 'helpingai' in config.model_name_or_path.lower():
-                tokenizer_path = config.tokenizer_name_or_path or "OEvortex/HelpingAI2.5-10B"
-                logger.info(f"Loading HelpingAI tokenizer from {tokenizer_path}")
-                tokenizer = AutoTokenizer.from_pretrained(
-                    tokenizer_path,
-                    revision=config.tokenizer_revision,
-                    use_fast=True
-                )
-            else:
-                tokenizer = AutoTokenizer.from_pretrained(
-                    config.tokenizer_name_or_path,
-                    revision=config.tokenizer_revision,
-                    use_fast=True
-                )
+            tokenizer = AutoTokenizer.from_pretrained(
+                config.tokenizer_name_or_path,
+                revision=config.tokenizer_revision,
+                use_fast=True
+            )
         except Exception as e:
             logger.warning(f"Could not load tokenizer from {config.tokenizer_name_or_path}: {e}")
             tokenizer = None

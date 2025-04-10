@@ -106,6 +106,7 @@ def run_server(config: ServerConfig):
             device_type=config.device,
             cuda_device_idx=config.cuda_device_idx,
             use_tpu=config.use_tpu,
+            force_tpu=config.force_tpu,
             tpu_cores=config.tpu_cores
         )
 
