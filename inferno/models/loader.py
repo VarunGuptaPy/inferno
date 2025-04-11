@@ -187,29 +187,30 @@ def load_hf_model(config: ServerConfig) -> Tuple[Any, Any, Dict[str, Any]]:
         # Load the model
         if config.use_tpu and config.device == "xla":
             try:
-                # Special handling for TPU
-                import torch_xla.core.xla_model as xm # type: ignore[import]
-
-                # Get the TPU device
+                import torch_xla.core.xla_model as xm
+        
+                # Explicitly get TPU device
                 device = xm.xla_device()
                 logger.info(f"Loading model on TPU device: {device}")
 
-                # For TPU, we need to modify the device_map
-                load_params["device_map"] = None  # Don't use device_map with TPU
+                # For TPU, we need specific loading parameters
+                load_params.update({
+                    "device_map": None,  # Don't use device_map with TPU
+                    "torch_dtype": torch.bfloat16
+                })
 
-                # Use bfloat16 for TPU
-                load_params["torch_dtype"] = torch.bfloat16
-
-                # Load the model
+                # Load model
                 model = AutoModelForCausalLM.from_pretrained(**load_params)
-
-                # Move the model to TPU device
+                
+                # Explicitly move to TPU
                 model = model.to(device)
-                logger.info("Model successfully loaded and moved to TPU device")
+                
+                # Verify model device
+                logger.info(f"Model device after loading: {next(model.parameters()).device}")
+                
             except Exception as e:
                 logger.error(f"Error loading model on TPU: {e}")
-                logger.warning("Falling back to standard loading method")
-                model = AutoModelForCausalLM.from_pretrained(**load_params)
+                raise
         else:
             # Standard loading for other devices
             model = AutoModelForCausalLM.from_pretrained(**load_params)
