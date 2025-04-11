@@ -1,0 +1,3 @@
+export PJRT_DEVICE=TPU
+export XLA_USE_BF16=1
+export TPU_NUM_DEVICES=8

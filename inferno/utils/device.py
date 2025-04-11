@@ -202,6 +202,31 @@ def setup_device(device_type: str = AUTO,
     Returns:
         Tuple of (device_type, cuda_device_idx)
     """
+    # If TPU is requested or forced
+    if use_tpu or force_tpu:
+        # Set TPU environment variables
+        os.environ["PJRT_DEVICE"] = "TPU"  # Force TPU device type
+        os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
+        os.environ["XLA_USE_BF16"] = "1"
+        os.environ["TPU_NUM_DEVICES"] = str(tpu_cores)
+        
+        try:
+            import torch_xla.core.xla_model as xm
+            # Explicitly create TPU device
+            device = xm.xla_device()
+            # Verify it's actually a TPU device
+            if 'TPU' in str(device):
+                logger.info("TPU device successfully initialized")
+                return XLA, None
+            else:
+                raise RuntimeError("Device initialized but not TPU")
+        except Exception as e:
+            logger.error(f"Failed to initialize TPU device: {e}")
+            if force_tpu:
+                raise RuntimeError("TPU initialization failed when forced") 
+            logger.warning("Falling back to CPU")
+            return CPU, None
+    
     # If TPU is forced, override device type
     if force_tpu:
         logger.info("TPU usage forced by configuration")
