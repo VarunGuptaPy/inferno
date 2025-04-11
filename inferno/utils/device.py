@@ -34,31 +34,32 @@ except ImportError:
 
 # Check for TPU availability
 try:
-    # First check if libtpu.so exists, which is a more reliable indicator
     import os
+    # Prevent timezone initialization conflict
+    os.environ["TZ"] = "UTC"
+    
     if os.path.exists('/usr/lib/libtpu.so') or os.path.exists('/lib/libtpu.so'):
-        # Set TPU environment variables early
+        # Set TPU environment variables in correct order
         os.environ["PJRT_DEVICE"] = "TPU"
         os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
-        logger.info("TPU library detected, setting PJRT_DEVICE=TPU")
+        os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = "0.90"
+        # Prevent multiple timezone initializations
+        os.environ["ABSL_SKIP_TIME_ZONE_INIT"] = "1"
+        
+        logger.info("TPU library detected, configuring environment")
 
-        # Now try to import torch_xla
         try:
-            import torch_xla # type: ignore[import]
-            import torch_xla.core.xla_model as xm # type: ignore[import]
-            # Verify TPU is actually available by trying to get devices
-            try:
-                devices = xm.get_xla_supported_devices()
-                if devices:
-                    XLA_AVAILABLE = True
-                    logger.info(f"TPU is available with {len(devices)} devices")
-                else:
-                    logger.warning("No TPU devices found despite libtpu.so being present")
-            except Exception as e:
-                logger.warning(f"Error initializing TPU: {e}")
+            import torch_xla
+            import torch_xla.core.xla_model as xm
+            devices = xm.get_xla_supported_devices()
+            if devices:
+                XLA_AVAILABLE = True
+                logger.info(f"TPU is available with {len(devices)} devices")
+            else:
+                logger.warning("No TPU devices found despite libtpu.so being present")
         except ImportError as e:
             logger.warning(f"TPU library detected but torch_xla import failed: {e}")
-            logger.warning("Install with: pip install torch_xla")
+            logger.warning("Install with: pip install torch_xla") 
     else:
         # If no libtpu.so, still try torch_xla as a fallback
         try:
